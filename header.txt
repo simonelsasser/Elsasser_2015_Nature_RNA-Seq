@@ -1,0 +1,1 @@
+ESC_H33KD1.bam	ESC_H33KD2.bam	ESC_KD_ctrl.bam	ESC_KO1.bam	ESC_KO2.bam	ESC_WT.bam	He_J1_DAXXKO.bam	He_J1_WT.bam	J1_TKO.bam	J1_WT.bam	Schotta_ATRXKO.bam	Schotta_DAXXKO.bam	Schotta_WT.bam	TT2_S1KO.bam	TT2_WT.bam	Wolf_DAXXKO.bam	Wolf_WT.bam
