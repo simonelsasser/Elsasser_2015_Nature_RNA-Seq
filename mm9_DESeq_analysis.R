@@ -1,12 +1,16 @@
 setwd("/shell/RNASeq/github/Elsasser_2015_Nature_RNA-Seq/")
 library(corrplot)
 
-# ------- read counts (mapped with botwie2 to combined mm9 and repbase transcriptome)
+# MAPPING: with botwie2 to mm9 genome using --fast-local)
+# COUNTS: with bedtools multibam using bed filed from RefSeq and RepMasker tracks downloaded from USCS)
 
+# ------- H3.3 enriched elements as reported in Fig 1d and Extended Data Fig 1, Elsässer et. al. 2015)
 H33_enriched_EFig1 <- c("REP_ETnERV-int","REP_ETnERV2-int","REP_ETnERV3-int","REP_IAP-d-int","REP_IAPEy-int","REP_IAPEY3-int","REP_IAPEz-int","REP_IAPLTR2_Mm","REP_IAPLTR3-int","REP_IAPLTR4_I","REP_LTRIS2","REP_MMERVK10C-int","REP_MMETn-int","REP_RLTR10-int","REP_RLTR1B","REP_RLTR1B-int","REP_RLTR4_MM-int","REP_RLTR6-int")
 
+# ERV families as in RepMasker (clustered and named according to the internal element)
 ERVs <- c("REP_RLTR1B-int","REP_MMERVK10C-int","REP_MuRRS4-int","REP_RLTR4_MM-int","REP_RLTR6-int","REP_MMERGLN-int","REP_MuLV-int","REP_IAPEy-int","REP_IAPEz-int","REP_IAPLTR3-int","REP_MERVL-int","REP_MERVL_2A-int","REP_ERVL-B4-int","REP_MuRRS-int","REP_RLTR10-int","REP_MURVY-int","REP_RNERVK23-int","REP_RLTR44-int","REP_MYSERV-int","REP_IAP-d-int","REP_RMER16-int","REP_MMVL30-int","REP_ETnERV2-int","REP_RMER6-int","REP_ETnERV3-int","REP_MurERV4-int","REP_ERVL-int","REP_MTB-int","REP_RLTR45-int","REP_RMER1A","REP_IAPEY3-int","REP_ETnERV-int","REP_RodERV21-int","REP_MMTV-int","REP_RLTR22_Mus","REP_MYSERV16_I-int","REP_RLTR14-int","REP_SRV_MM-int","REP_MYSERV6-int","REP_RLTR19-int","REP_MMETn-int","REP_RMER3D-int","REP_RMER17C-int","REP_MurERV4_19-int","REP_MERVK26-int","REP_RLTR42-int","REP_RMER15-int","REP_RLTR18-int","REP_RLTR22_Mur")
 
+# ------- Read dataset descriptions and read count files
 header <- read.table("header.txt", sep="\t", header = TRUE)
 
 RepBase_counts <- read.table("RepBase_counts_2kb.txt", sep="\t", col.names = c("Chr","Start","Stop","Gene","Score","Dir",colnames(header)), header = FALSE)[,c(4,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23)]
@@ -27,7 +31,7 @@ remove("RefSeq_counts")
 CountTable <- rbind(RepBase_aggr,RefSeq_aggr)
 colSums(CountTable[,2:7])
 
-# ------- filter low expressed transcripts
+# ------- filter low expressed transcripts)
 CountTable <- CountTable[apply(CountTable[,2:7],1,min)>10,]
 colSums(CountTable[,2:7])
 
@@ -39,12 +43,14 @@ CountTable_Gene <- CountTable$Gene
 CountTable$Copies <- NULL
 CountTable$Gene <- NULL
 
-# ------- define conditions
+# ------- define series and conditions: H3.3 KO, H3.3 KO/KD ('def') and WT/control ('ctrl') cell lines
 Des <- data.frame(row.names = colnames(CountTable[,1:6]),condition = c("def","def","ctrl","def","def","ctrl"), series= c("KD","KD","KD","KO","KO","KO"))
 
 
+# --------- DESeq analysis is done in two alternative ways:
+# --------- 1) evaluating series independently
+# --------- 2) combining all replicates
 
-# --------- combined analysis
 library("DESeq")
 cds = newCountDataSet(CountTable[,1:6],Des)
 cds = estimateSizeFactors(cds)
@@ -54,15 +60,16 @@ plotDispEsts(cds, main="DESeq: Per-gene dispersion estimates")
 print(plotPCA(varianceStabilizingTransformation(cds), intgroup=c("condition", "series")))
 
 
-# ------- test for differences in series and conditions
+# ------- 1) test for differences in series and conditions
 fit1 = fitNbinomGLMs( cds, count ~ series + condition )
 fit0 = fitNbinomGLMs( cds, count ~ series  )
 pvalsGLM = nbinomGLMTest( fit1, fit0 )
 
 
-# ------- testing without taking into account the different cell lines
+# ------- 2) test for differences combining all replicates
 out <- nbinomTest(cds, "ctrl", "def" )
 
+# ------- summarizing results in table
 summary <- data.frame(Gene=out$id)
 summary$baseMean <- out$baseMean
 summary$log2FoldChange <- out$log2FoldChange
@@ -127,7 +134,7 @@ dev.off();dev.off()
 
 CountTable <- rbind(RepBase_aggr,RefSeq_aggr)
 
-# ------- filter low expressed transcripts
+# ------- filter low expressed transcripts (same as for H3.3 for consistency)
 CountTable <- CountTable[apply(CountTable[,2:7],1,min)>10,]
 
 head(CountTable[,c(8,9,13,14,17,18)])
@@ -153,7 +160,7 @@ corrplot(mcor, method="color", col=col(100),
 )
 dev.off()
 
-# --------- combined analysis
+# --------- DESEq
 Des <- data.frame(row.names = colnames(CountTable[,c(8,9,13,14,17,18)]),condition = c("def","ctrl","def","ctrl","def","ctrl"), series= c("S1","S1","S2","S2","S3","S3"))
 cds = newCountDataSet(CountTable[,c(8,9,13,14,17,18)],Des)
 cds = estimateSizeFactors(cds)
