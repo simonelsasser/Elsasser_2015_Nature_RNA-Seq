@@ -35,6 +35,26 @@ colSums(CountTable[,2:7])
 CountTable <- CountTable[apply(CountTable[,2:7],1,min)>10,]
 colSums(CountTable[,2:7])
 
+pdf("H33_Correlation_Datasets.pdf")
+
+mcor <- cor(data.matrix(CountTable[,2:7]), method="pearson")
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(mcor, method="color", col=col(100),  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         diag=TRUE,
+)
+
+mcor <- cor(data.matrix(CountTable[,2:7]), method="spearman")
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+corrplot(mcor, method="color", col=col(100),  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         diag=TRUE,
+)
+dev.off()
 
 
 # ------- save copy number info for later
